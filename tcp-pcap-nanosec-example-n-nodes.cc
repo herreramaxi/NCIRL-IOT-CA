@@ -58,33 +58,55 @@ NS_LOG_COMPONENT_DEFINE("TcpPcapNanosecExample");
 
 void print(std::string label, uint64_t metric)
 {
-  std::cout << "  " << label << ":   " << metric << "\n";
+  std::cout << "  " << label << ": " << metric << "\n";
+}
+void print(std::string label, uint32_t metric)
+{
+  std::cout << "  " << label <<  ": " << metric << "\n";
+}
+void print(std::string label, uint32_t metric, std::string unit)
+{
+  std::cout << "  " << label <<  ": " << metric << unit << "\n";
 }
 void print(std::string label, int64_t metric, std::string unit)
 {
-  std::cout << "  " << label << ":   " << metric << unit << "\n";
+  std::cout << "  " << label << ": "<< metric << unit << "\n";
 }
 
 void print(std::string label, uint64_t metric, std::string unit)
 {
-  std::cout << "  " << label << ":   " << metric << unit << "\n";
+  std::cout << "  " << label <<  ": " << metric << unit << "\n";
 }
 
 void print(std::string label, double metric, std::string unit)
 {
-  std::cout << "  " << label << ":   " << metric << unit << "\n";
+  std::cout << "  " << label <<  ": "<< metric << unit << "\n";
 }
 
 void print(std::string label, Time metric)
 {
   std::cout << "  " << label
-            << ":   " << metric << " = " << metric.GetSeconds() << "s"
+            <<  ": " << metric << " = " << metric.GetSeconds() << "s"
             << "\n";
 }
 
-void printTocsv(std::ofstream &file, std::string str)
+void print(std::string str)
+{
+  std::cout << str;
+}
+
+void appendNewLine(std::ofstream &file)
+{
+  file << "\n";
+}
+void appendNoDelimiter(std::ofstream &file, std::string str)
 {
   file << str;
+}
+
+void appendTo(std::ofstream &file, const char *str)
+{
+  file << str << ",";
 }
 
 void appendTo(std::ofstream &file, std::string str)
@@ -118,21 +140,33 @@ void appendTo(std::ofstream &file, Ipv4Address data)
   file << data << ",";
 }
 
-//"Flow,Source IP, Source Port,Target IP, Target Port,Tx Bytes,Rx Bytes,delaySum,rxPackets,jitterSum,timeLastRxPacket,TimeFirstRxPacket,timeLastRxPacket -timeFirstRxPacket,Delay,Jitter,Throughput \n");
+void printHeaderToCsv(std::ofstream &file)
+{
+  appendTo(file, "Flow");
+  appendTo(file, "Source IP");
+  appendTo(file, "Source Port");
+  appendTo(file, "Target IP");
+  appendTo(file, "Target Port");
+  appendTo(file, "Tx Bytes");
+  appendTo(file, "Rx Bytes");
+  appendTo(file, "Sent Packets");
+  appendTo(file, "Received Packets");
+  appendTo(file, "Lost Packets");
+  appendTo(file, "Packet delivery ratio");
+  appendTo(file, "Packet loss ratio");
+  appendTo(file, "delaySum (s)");
+  appendTo(file, "jitterSum (s)");
+  appendTo(file, "timeLastRxPacket (s)");
+  appendTo(file, "TimeFirstRxPacket (s)");
+  appendTo(file, "timeLastRxPacket - timeFirstRxPacket (s)");
+  appendTo(file, "Delay (ms)");
+  appendTo(file, "Jitter (ms)");
+  appendTo(file, "Throughput (Mbps)");
+  appendNewLine(file);
+}
+
 void printTocsv(std::ofstream &file, FlowId flowId, FlowMonitor::FlowStats second, Ipv4FlowClassifier::FiveTuple t)
 {
-
-  // file << flowId << "," << t.sourceAddress << "," << t.sourcePort << ","
-  // << t.destinationAddress << "," << t.destinationPort << "," <<
-  // second.txBytes << ","
-  // << second.rxBytes << "," << second.delaySum << "," << second.rxPackets << "," << second.jitterSum << "," << second.timeLastRxPacket.GetSeconds() << "s"
-  //      << "," << second.timeFirstRxPacket.GetSeconds() << "s"
-  //      << "," << second.timeLastRxPacket.GetSeconds() - second.timeFirstRxPacket.GetSeconds() << "s"
-  //      << "," << (double)second.delaySum.GetMilliSeconds() / second.rxPackets << "ms"
-  //      << "," << (double)second.jitterSum.GetMilliSeconds() / (second.rxPackets - 1) << "ms"
-  //      << "," << second.rxBytes * 8.0 / (second.timeLastRxPacket.GetSeconds() - second.timeFirstRxPacket.GetSeconds()) / 1024 / 1024 << "Mbps"
-  //      << "\n";
-
   appendTo(file, flowId);
   appendTo(file, t.sourceAddress);
   appendTo(file, t.sourcePort);
@@ -140,8 +174,12 @@ void printTocsv(std::ofstream &file, FlowId flowId, FlowMonitor::FlowStats secon
   appendTo(file, t.destinationPort);
   appendTo(file, second.txBytes);
   appendTo(file, second.rxBytes);
-  appendTo(file, second.delaySum.GetSeconds());
+  appendTo(file, second.txPackets);
   appendTo(file, second.rxPackets);
+  appendTo(file, second.txPackets - second.rxPackets);
+  appendTo(file, second.rxPackets * 100 / second.txPackets);
+  appendTo(file, (second.txPackets - second.rxPackets) * 100 / second.txPackets);
+  appendTo(file, second.delaySum.GetSeconds());
   appendTo(file, second.jitterSum.GetSeconds());
   appendTo(file, second.timeLastRxPacket.GetSeconds());
   appendTo(file, second.timeFirstRxPacket.GetSeconds());
@@ -149,12 +187,22 @@ void printTocsv(std::ofstream &file, FlowId flowId, FlowMonitor::FlowStats secon
   appendTo(file, (double)second.delaySum.GetMilliSeconds() / second.rxPackets);
   appendTo(file, (double)second.jitterSum.GetMilliSeconds() / (second.rxPackets - 1));
   appendTo(file, (double)second.rxBytes * 8.0 / (second.timeLastRxPacket.GetSeconds() - second.timeFirstRxPacket.GetSeconds()) / 1024 / 1024);
-  printTocsv(file, "\n");
+  appendNewLine(file);
 }
 
 int main(int argc, char *argv[])
 {
-
+  uint64_t totaltxBytes = 0;
+  uint64_t totalrxBytes = 0;
+  uint32_t totaltxPackets = 0;
+  uint32_t totalrxPackets = 0;
+  uint32_t totalLostPackets = 0;
+  double totalDelaySum = 0;
+  double totalJitterSum = 0;
+  double avgDelay = 0;
+  double avgJitter = 0;
+  double avgThroughput = 0;
+  int count = 0;
   bool tracing = false;
   bool nanosec = false;
   uint32_t maxBytes = 327680;
@@ -261,7 +309,7 @@ int main(int argc, char *argv[])
 
   std::ofstream myfile;
   myfile.open("tcpResults-" + std::to_string(maxNodes) + "-nodes.csv");
-  printTocsv(myfile, "Flow,Source IP,Source Port,Target IP, Target Port,Tx Bytes,Rx Bytes,delaySum (s),rxPackets,jitterSum (s),timeLastRxPacket (s),TimeFirstRxPacket (s),timeLastRxPacket -timeFirstRxPacket (s),Delay (ms),Jitter (ms),Throughput (Mbps) \n");
+  printHeaderToCsv(myfile);
 
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
   std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats();
@@ -278,17 +326,67 @@ int main(int argc, char *argv[])
 
     print("Tx Bytes", i->second.txBytes);
     print("Rx Bytes", i->second.rxBytes);
+    print("Sent Packets", i->second.txPackets);
+    print("Received Packets", i->second.rxPackets);
+    print("Lost Packets", i->second.txPackets - i->second.rxPackets);
+    print("Packet delivery ratio", i->second.rxPackets * 100 / i->second.txPackets);
+    print("Packet loss ratio", (i->second.txPackets - i->second.rxPackets) * 100 / i->second.txPackets);
     print("delaySum", i->second.delaySum);
-    print("rxPackets", i->second.rxPackets);
     print("jitterSum", i->second.jitterSum);
-    print("timeLastRxPacket", i->second.timeLastRxPacket);
-    print("TimeFirstRxPacket", i->second.timeFirstRxPacket);
     print("timeLastRxPacket -timeFirstRxPacket", i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstRxPacket.GetSeconds(), "s");
     print("Delay", (double)i->second.delaySum.GetMilliSeconds() / i->second.rxPackets, "ms");
     print("Jitter", (double)i->second.jitterSum.GetMilliSeconds() / (i->second.rxPackets - 1), "ms");
+    print("Throughput", (double)i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstRxPacket.GetSeconds()) / 1024 / 1024, "Mbps");
 
     printTocsv(myfile, i->first, i->second, t);
+
+    totaltxBytes += i->second.txBytes;
+    totalrxBytes += i->second.rxBytes;
+    totaltxPackets += i->second.txPackets;
+    totalrxPackets += i->second.rxPackets;
+    totalLostPackets += (i->second.txPackets - i->second.rxPackets);
+    totalDelaySum += i->second.delaySum.GetSeconds();
+    totalJitterSum += i->second.jitterSum.GetSeconds();
+    avgDelay += ((double)i->second.delaySum.GetMilliSeconds() / i->second.rxPackets);
+    avgJitter += ((double)i->second.jitterSum.GetMilliSeconds() / (i->second.rxPackets - 1));
+    avgThroughput += ((double)i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstRxPacket.GetSeconds()) / 1024 / 1024);
+    count++;
   }
+
+  print("=================TOTAL RESULTS=======================\n");
+  print("Total Tx Bytes", totaltxBytes, "bytes");
+  print("Total Rx Bytes", totalrxBytes, "bytes");
+  print("Total Sent Packets", totaltxPackets);
+  print("Total Received Packets", totalrxPackets);
+  print("Total Lost Packets", totalLostPackets);
+  print("Packet delivery ratio", (double)totalrxPackets * 100 / totaltxPackets, "%");
+  print("Packet loss ratio", (double)(totaltxPackets - totalrxPackets) * 100 / totaltxPackets, "%");
+  print("End to end delay", (double)totalDelaySum, "s");
+  print("End to end jitter",  (double)totalJitterSum, "s");
+  print("Avg Delay", avgDelay / count, "ms");
+  print("Avg Jitter", avgJitter / count, "ms");
+  print("Avg Throughput", avgThroughput / count, "Mbps");
+
+  appendTo(myfile, "Average/Total");
+  appendTo(myfile, "");
+  appendTo(myfile, "");
+  appendTo(myfile, "");
+  appendTo(myfile, "");
+  appendTo(myfile, totaltxBytes);
+  appendTo(myfile, totalrxBytes);
+  appendTo(myfile, totaltxPackets);
+  appendTo(myfile, totalrxPackets);
+  appendTo(myfile, totalLostPackets);
+  appendTo(myfile, (double)totalrxPackets * 100 / totaltxPackets);
+  appendTo(myfile, (double)(totaltxPackets - totalrxPackets) * 100 / totaltxPackets);
+  appendTo(myfile, totalDelaySum);
+  appendTo(myfile, totalJitterSum);
+  appendTo(myfile, "");
+  appendTo(myfile, "");
+  appendTo(myfile, "");
+  appendTo(myfile, avgDelay / count);
+  appendTo(myfile, avgJitter / count);
+  appendTo(myfile, avgThroughput / count);
 
   myfile.close();
 
