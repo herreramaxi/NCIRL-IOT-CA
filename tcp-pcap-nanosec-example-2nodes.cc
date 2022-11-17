@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
     print("Throughput", i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstRxPacket.GetSeconds()) / 1024 / 1024, "Mbps");
   }
 
-  monitor->SerializeToXmlFile("tcp-results.xml", true, true);
+  monitor->SerializeToXmlFile("tcp-results2nodes.xml", true, true);
   Simulator::Destroy();
   NS_LOG_INFO("Done.");
 }
