@@ -411,17 +411,15 @@ int main(int argc, char *argv[])
   }
 
   apps.Start(Seconds(1.0));
-  apps.Stop(Seconds(20.0));
-  // apps.Start(Seconds(1.0));
-  // apps.Stop(Seconds(10.0));
+  apps.Stop(Seconds(25.0));
 
   //
   // Create one UdpClient application to send UDP datagrams from node zero to
   // node one.
   //
   uint32_t MaxPacketSize = 1024;
-  // Time interPacketInterval = Seconds(0.05);
-  Time interPacketInterval = Seconds(0.005);
+  Time interPacketInterval = Seconds(0.05);
+//  Time interPacketInterval = Seconds(0.005);
   uint32_t maxPacketCount = 320;
 
   for (int j = 0; j < maxNodes - 1; j++)
@@ -434,7 +432,7 @@ int main(int argc, char *argv[])
   }
 
   apps.Start(Seconds(2.0));
-  apps.Stop(Seconds(20.0));
+  apps.Stop(Seconds(25.0));
 
   Ptr<FlowMonitor> flowMonitor;
   FlowMonitorHelper flowHelper;
