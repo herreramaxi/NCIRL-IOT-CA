@@ -449,13 +449,13 @@ int main(int argc, char *argv[])
   flowMonitor->CheckForLostPackets();
 
   std::ofstream myfile;
-  myfile.open("udpResults-" + std::to_string(maxNodes) + "-nodes.csv");
+  myfile.open("scratch/.Results/udpResults-" + std::to_string(maxNodes) + "-nodes.csv");
   PrintHeaderToCsv(myfile);
 
- bool exists = fileExists("avgResults.csv");
+ bool exists = fileExists("scratch/.Results/avgResults.csv");
 
   std::ofstream avgResultsFile;
-  avgResultsFile.open("avgResults.csv", std::ios_base::app);
+  avgResultsFile.open("scratch/.Results/avgResults.csv", std::ios_base::app);
 
   if (!exists)
   {
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
   myfile.close();
   avgResultsFile.close();
 
-  flowMonitor->SerializeToXmlFile("udpResults-" + std::to_string(maxNodes) + "-nodes.xml", true, true);
+  flowMonitor->SerializeToXmlFile("scratch/.Results/udpResults-" + std::to_string(maxNodes) + "-nodes.xml", true, true);
   Simulator::Destroy();
   NS_LOG_INFO("Done.");
 

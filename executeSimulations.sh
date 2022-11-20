@@ -1,7 +1,17 @@
 #usr/bin/bash
-echo "Executing TCP simulations..."
-rm avgResults.csv
 
+dirResults="scratch/.Results"
+
+echo "Create scratch/.Results folder if not exists"
+if [ ! -d $dirResults ]
+then
+     mkdir $dirResults
+fi
+
+echo "Delete avgResults.csv"
+rm scratch/.Results/avgResults.csv
+
+echo "Executing TCP simulations..."
 ./waf --run "scratch/tcp-pcap-nanosec-example-n-nodes --nodes=2"
 ./waf --run "scratch/tcp-pcap-nanosec-example-n-nodes --nodes=3"
 ./waf --run "scratch/tcp-pcap-nanosec-example-n-nodes --nodes=6"
