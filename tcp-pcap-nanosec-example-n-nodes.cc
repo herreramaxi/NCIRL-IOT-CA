@@ -41,6 +41,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <sys/stat.h>
 #include "ns3/core-module.h"
 #include "ns3/nstime.h"
 #include "ns3/on-off-helper.h"
@@ -66,7 +67,7 @@ double totalJitterSum;
 double avgDelay;
 double avgJitter;
 double avgThroughput;
-
+int maxNodes;
 //****************************************
 // Support functions for stdout
 //****************************************
@@ -151,6 +152,16 @@ void PrintTotalResults(int count)
 //****************************************
 // Support functions for CSV file
 //****************************************
+
+bool fileExists(const std::string &filename)
+{
+  struct stat buf;
+  if (stat(filename.c_str(), &buf) != -1)
+  {
+    return true;
+  }
+  return false;
+}
 
 void appendNewLine(std::ofstream &file)
 {
@@ -276,6 +287,44 @@ void PrintTotalResultsToCsv(std::ofstream &myfile, int count)
   appendTo(myfile, avgThroughput / count);
 }
 
+void PrintHeaderResultsToCsv(std::ofstream &file)
+{
+  appendTo(file, "Protocol");
+  appendTo(file, "Nodes");
+  appendTo(file, "Tx Bytes");
+  appendTo(file, "Rx Bytes");
+  appendTo(file, "Sent Packets");
+  appendTo(file, "Received Packets");
+  appendTo(file, "Lost Packets");
+  appendTo(file, "Packet delivery ratio");
+  appendTo(file, "Packet loss ratio");
+  appendTo(file, "delaySum (s)");
+  appendTo(file, "jitterSum (s)");
+  appendTo(file, "Delay (ms)");
+  appendTo(file, "Jitter (ms)");
+  appendTo(file, "Throughput (Mbps)");
+  appendNewLine(file);
+}
+
+void AppendTotalResultsToCsv(std::ofstream &file, int count)
+{
+  appendTo(file, "TCP");
+  appendTo(file, (uint32_t)maxNodes);
+  appendTo(file, totaltxBytes);
+  appendTo(file, totalrxBytes);
+  appendTo(file, totaltxPackets);
+  appendTo(file, totalrxPackets);
+  appendTo(file, totalLostPackets);
+  appendTo(file, (double)totalrxPackets * 100 / totaltxPackets);
+  appendTo(file, (double)(totaltxPackets - totalrxPackets) * 100 / totaltxPackets);
+  appendTo(file, totalDelaySum);
+  appendTo(file, totalJitterSum);
+  appendTo(file, avgDelay / count);
+  appendTo(file, avgJitter / count);
+  appendTo(file, avgThroughput / count);
+  appendNewLine(file);
+}
+
 //****************************************
 // Support functions for stats calculations
 //****************************************
@@ -316,7 +365,7 @@ int main(int argc, char *argv[])
   bool tracing = false;
   bool nanosec = false;
   uint32_t maxBytes = 327680;
-  int maxNodes = 2;
+  maxNodes = 2;
 
   CommandLine cmd;
   cmd.AddValue("tracing", "Flag to enable tracing", tracing);
@@ -416,10 +465,20 @@ int main(int argc, char *argv[])
 
   PrintHeaderToCsv(myfile);
 
+  bool exists = fileExists("totalResults.csv");
+
+  std::ofstream totalResultsFile;
+  totalResultsFile.open("totalResults.csv", std::ios_base::app);
+
+  if (!exists)
+  {
+    PrintHeaderResultsToCsv(totalResultsFile);
+  }
+
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
   std::map<FlowId, FlowMonitor::FlowStats> stats = flowMonitor->GetFlowStats();
   int count = 0;
-  
+
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin(); i != stats.end(); ++i)
   {
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(i->first);
@@ -437,8 +496,10 @@ int main(int argc, char *argv[])
 
   PrintTotalResults(count);
   PrintTotalResultsToCsv(myfile, count);
+  AppendTotalResultsToCsv(totalResultsFile, count);
 
   myfile.close();
+  totalResultsFile.close();
 
   flowMonitor->SerializeToXmlFile("tcpResults-" + std::to_string(maxNodes) + "-nodes.xml", true, true);
   Simulator::Destroy();

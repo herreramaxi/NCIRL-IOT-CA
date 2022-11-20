@@ -1,5 +1,7 @@
 #usr/bin/bash
 echo "Executing TCP simulations..."
+rm totalResults.csv
+
 ./waf --run "scratch/tcp-pcap-nanosec-example-n-nodes --nodes=2"
 ./waf --run "scratch/tcp-pcap-nanosec-example-n-nodes --nodes=3"
 ./waf --run "scratch/tcp-pcap-nanosec-example-n-nodes --nodes=6"
