@@ -452,14 +452,14 @@ int main(int argc, char *argv[])
   myfile.open("udpResults-" + std::to_string(maxNodes) + "-nodes.csv");
   PrintHeaderToCsv(myfile);
 
-  bool exists = fileExists("totalResults.csv");
+ bool exists = fileExists("avgResults.csv");
 
-  std::ofstream totalResultsFile;
-  totalResultsFile.open("totalResults.csv", std::ios_base::app);
+  std::ofstream avgResultsFile;
+  avgResultsFile.open("avgResults.csv", std::ios_base::app);
 
   if (!exists)
   {
-    PrintHeaderResultsToCsv(totalResultsFile);
+    PrintHeaderResultsToCsv(avgResultsFile);
   }
 
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
@@ -483,10 +483,10 @@ int main(int argc, char *argv[])
 
   PrintTotalResults(count);
   PrintTotalResultsToCsv(myfile, count);
-  AppendAvgResultsToCsv(totalResultsFile, count);
+  AppendAvgResultsToCsv(avgResultsFile, count);
 
   myfile.close();
-  totalResultsFile.close();
+  avgResultsFile.close();
 
   flowMonitor->SerializeToXmlFile("udpResults-" + std::to_string(maxNodes) + "-nodes.xml", true, true);
   Simulator::Destroy();
